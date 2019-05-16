@@ -55,6 +55,7 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
 #include <rosgraph_msgs/Clock.h>
+#include <nav_msgs/Imu.h>
 
 #include "api/flight_control_interface.hpp"
 #include "snav_msgs/ComputeTrajAction.h"
