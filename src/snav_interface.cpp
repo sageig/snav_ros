@@ -60,12 +60,11 @@ SnavInterface::SnavInterface(ros::NodeHandle nh, ros::NodeHandle pnh,
   barom_raw_publisher_ = nh_.advertise<sensor_msgs::FluidPressure>("barometer_raw", 10);
   gps_raw_publisher_ = nh_.advertise<sensor_msgs::NavSatFix>("gps_raw", 10);
   dspal_version_publisher_ = nh_.advertise<std_msgs::String>("dspal_version", 10);
-  esc_version_publisher_ = nh_.advertise<std_msgs::Int32>("esc_sw_version", 10);
   current_mode_publisher_ = nh_.advertise<std_msgs::String>("current_mode", 10);
-  gps_status_publisher_ = nh_.advertise<std_msgs::Int32>("gps_status", 10);
-  imu_status_publisher_ = nh_.advertise<std_msgs::Int32>("imu_status", 10);
-  barom_status_publisher_ = nh_.advertise<std_msgs::Int32>("barom_status", 10);
-  rc_status_publisher_ = nh_.advertise<std_msgs::Int32>("rc_status", 10);
+  gps_status_publisher_ = nh_.advertise<std_msgs::String>("gps_status", 10);
+  imu_status_publisher_ = nh_.advertise<std_msgs::String>("imu_status", 10);
+  barom_status_publisher_ = nh_.advertise<std_msgs::String>("barom_status", 10);
+  rc_status_publisher_ = nh_.advertise<std_msgs::String>("rc_status", 10);
 
   cmd_vel_subscriber_ = nh_.subscribe("cmd_vel", 10, &SnavInterface::CmdVelCallback, this);
   start_props_subscriber_ = nh_.subscribe("start_props", 10, &SnavInterface::StartPropsCallback, this);
@@ -1273,20 +1272,26 @@ void SnavInterface::PublishSimGtPose(){
 void SnavInterface::PublishImu(){
   sensor_msgs::Imu imu_msg;
   SnavCachedData snav_data = fci_.get_snav_cached_data();
-  imu_msg.header.stamp = snav_data.imu_0_raw.time;
+  int nsecs = (snav_data.imu_0_raw.time % 1000) * 1000000;
+  int secs = snav_data.imu_0_raw.time / 1000;
+  ros::Time log_time(secs, nsecs);
+  imu_msg.header.stamp = log_time;
   imu_msg.angular_velocity.x = snav_data.imu_0_raw.ang_vel[0];
   imu_msg.angular_velocity.y = snav_data.imu_0_raw.ang_vel[1];
   imu_msg.angular_velocity.z = snav_data.imu_0_raw.ang_vel[2];
-  imu_msg.linear_acceleration.x = snav_data.imu_0_raw.lin_acc[0];
-  imu_msg.linear_acceleration.y = snav_data.imu_0_raw.lin_acc[1];
-  imu_msg.linear_acceleration.z = snav_data.imu_0_raw.lin_acc[2];
+  imu_msg.linear_acceleration.x = snav_data.imu_0_raw.lin_acc[0]*9.80665;
+  imu_msg.linear_acceleration.y = snav_data.imu_0_raw.lin_acc[1]*9.80665;
+  imu_msg.linear_acceleration.z = snav_data.imu_0_raw.lin_acc[2]*9.80665;
   imu_raw_publisher_.publish( imu_msg );
 }
 
 void SnavInterface::PublishBarometer(){
   sensor_msgs::FluidPressure barom_msg;
   SnavCachedData snav_data = fci_.get_snav_cached_data();
-  barom_msg.header.stamp = snav_data.barometer_0_raw.time;
+  int nsecs = (snav_data.imu_0_raw.time % 1000) * 1000000;
+  int secs = snav_data.imu_0_raw.time / 1000;
+  ros::Time log_time(secs, nsecs);
+  barom_msg.header.stamp = log_time;
   barom_msg.fluid_pressure = snav_data.barometer_0_raw.pressure;
   barom_raw_publisher_.publish( barom_msg );
 }
@@ -1294,41 +1299,40 @@ void SnavInterface::PublishBarometer(){
 void SnavInterface::PublishGPS(){
   sensor_msgs::NavSatFix gps_msg;
   SnavCachedData snav_data = fci_.get_snav_cached_data();
-  gps_msg.header.stamp = snav_data.gps_0_raw.time;
+  int nsecs = (snav_data.imu_0_raw.time % 1000) * 1000000;
+  int secs = snav_data.imu_0_raw.time / 1000;
+  ros::Time log_time(secs, nsecs);
+  gps_msg.header.stamp = log_time;
   gps_msg.status.status = snav_data.gps_0_raw.fix_type;
   gps_msg.status.service = snav_data.gps_0_raw.identifier;
-  gps_msg.latitude = snav_data.gps_0_raw.latitude/10e7;
-  gps_msg.longitude = snav_data.gps_0_raw.longitude/10e7;
+  gps_msg.latitude = snav_data.gps_0_raw.latitude/10e6;
+  gps_msg.longitude = snav_data.gps_0_raw.longitude/10e6;
   gps_msg.altitude = snav_data.gps_0_raw.altitude;
-
   gps_raw_publisher_.publish( gps_msg );
 }
 
 void SnavInterface::PublishVersion(){
   std_msgs::String dspal_version_msg;
-  std_msgs::Int32 esc_version_msg;
+  std_msgs::String esc_version_msg;
   SnavCachedData snav_data = fci_.get_snav_cached_data();
-  dspal_version_msg = snav_data.version_info.dspal_version;
+  dspal_version_msg.data = snav_data.version_info.dspal_version;
   dspal_version_publisher_.publish( dspal_version_msg );
-
-  esc_version_msg = snav_data.version_info.esc_sw_version;
-  esc_version_publisher_.publish( esc_version_msg );
 }
 
 void SnavInterface::PublishStatus(){
   std_msgs::String current_mode_msg;
-  std_msgs::Int32 gps_status_msg;
-  std_msgs::Int32 imu_status_msg;
-  std_msgs::Int32 barom_status_msg;
-  std_msgs::Int32 rc_status_msg;
+  std_msgs::String gps_status_msg;
+  std_msgs::String imu_status_msg;
+  std_msgs::String barom_status_msg;
+  std_msgs::String rc_status_msg;
   SnavCachedData snav_data = fci_.get_snav_cached_data();
-  current_mode_msg = snav_data.general_status.current_mode;
+  current_mode_msg.data = sn_get_enum_string("SnMode", snav_data.general_status.current_mode);
   current_mode_publisher_.publish( current_mode_msg );
 
-  gps_status_msg = snav_data.data_status.gps_0_status;
-  imu_status_msg = snav_data.data_status.imu_0_status;
-  barom_status_msg = snav_data.data_status.baro_0_status;
-  rc_status_msg = snav_data.data_status.spektrum_rc_0_status;
+  gps_status_msg.data = sn_get_enum_string("SnDataStatus", snav_data.data_status.gps_0_status);
+  imu_status_msg.data = sn_get_enum_string("SnDataStatus", snav_data.data_status.imu_0_status);
+  barom_status_msg.data = sn_get_enum_string("SnDataStatus", snav_data.data_status.baro_0_status);
+  rc_status_msg.data = sn_get_enum_string("SnDataStatus", snav_data.data_status.spektrum_rc_0_status);
   gps_status_publisher_.publish( gps_status_msg );
   imu_status_publisher_.publish( imu_status_msg );
   barom_status_publisher_.publish( barom_status_msg );

@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
   bool broadcast_launch_tf;
   bool broadcast_sim_gt_tf, publish_sim_gt_pose;
   bool broadcast_waypoint_tf;
-  bool publish_imu, publish_barom, publish_gps
+  bool publish_imu, publish_barom, publish_gps;
   private_nh.param("broadcast_tf", broadcast_tf, true);
   private_nh.param("broadcast_des_tf", broadcast_des_tf, true);
   private_nh.param("broadcast_gps_tf", broadcast_gps_tf, true);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
     if (publish_barom)
     {
-      sn_iface.PublishBarom();
+      sn_iface.PublishBarometer();
     }
 
     if (publish_gps)
