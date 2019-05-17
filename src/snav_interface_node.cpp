@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
   bool broadcast_launch_tf;
   bool broadcast_sim_gt_tf, publish_sim_gt_pose;
   bool broadcast_waypoint_tf;
+  bool publish_imu, publish_barom, publish_gps
   private_nh.param("broadcast_tf", broadcast_tf, true);
   private_nh.param("broadcast_des_tf", broadcast_des_tf, true);
   private_nh.param("broadcast_gps_tf", broadcast_gps_tf, true);
@@ -66,6 +67,9 @@ int main(int argc, char *argv[])
   private_nh.param("publish_pose", publish_pose, true);
   private_nh.param("publish_des_pose", publish_des_pose, true);
   private_nh.param("publish_sim_gt_pose", publish_sim_gt_pose, true);
+  private_nh.param("publish_imu", publish_imu, true);
+  private_nh.param("publish_barom", publish_barom, true);
+  private_nh.param("publish_gps", publish_gps, true);
 
   using FCI = snav_fci::FlightControlInterface;
   FCI::Permissions permissions;
@@ -120,6 +124,21 @@ int main(int argc, char *argv[])
         sn_iface.BroadcastSimGtTf();
       if (publish_sim_gt_pose)
         sn_iface.PublishSimGtPose();
+    }
+
+    if (publish_imu)
+    {
+      sn_iface.PublishImu();
+    }
+
+    if (publish_barom)
+    {
+      sn_iface.PublishBarom();
+    }
+
+    if (publish_gps)
+    {
+      sn_iface.PublishGPS();
     }
 
     loop_ctrl.sleep();

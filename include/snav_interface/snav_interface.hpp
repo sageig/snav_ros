@@ -55,7 +55,10 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
 #include <rosgraph_msgs/Clock.h>
-#include <nav_msgs/Imu.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/FluidPressure.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <std_msgs/Int32.h>
 
 #include "api/flight_control_interface.hpp"
 #include "snav_msgs/ComputeTrajAction.h"
@@ -166,6 +169,21 @@ public:
   void PublishTrajectory();
 
   /**
+   * Publish raw imu in waypoint_frame_ as sensor_msgs/Imu
+   */
+  void PublishImu();
+
+  /**
+   * Publish raw barometer as sensor_msgs/FluidPressure
+   */
+  void PublishBarometer();
+
+  /**
+   * Publish raw GPS as sensor_msgs/NavSatFix
+   */
+  void PublishGPS();
+
+  /**
    * Publish battery voltage and on_groung flag as Float32 and Bool msgs
    * @param event
    *   Required argument for a function passed to a ros timer, This function
@@ -248,6 +266,8 @@ private:
   void PublishBatteryVoltage();
   void PublishOnGroundFlag();
   void PublishPropsState();
+  void PublishStatus();
+  void PublishVersion();
 
   void SendVelocityCommand();
   void GetDSPTimeOffset();
@@ -272,6 +292,16 @@ private:
   ros::Publisher optimized_waypoint_publisher_;
   ros::Publisher traj_publisher_;
   ros::Publisher props_state_publisher_;
+  ros::Publisher imu_raw_publisher_;
+  ros::Publisher barom_raw_publisher_;
+  ros::Publisher gps_raw_publisher_;
+  ros::Publisher dspal_version_publisher_;
+  ros::Publisher esc_version_publisher_;
+  ros::Publisher current_mode_publisher_;
+  ros::Publisher gps_status_publisher_;
+  ros::Publisher imu_status_publisher_;
+  ros::Publisher barom_status_publisher_;
+  ros::Publisher rc_status_publisher_;
 
   ros::Subscriber cmd_vel_subscriber_;
   ros::Subscriber start_props_subscriber_;
