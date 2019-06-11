@@ -45,6 +45,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Quaternion.h>
 #include <nav_msgs/Path.h>
+#include <nav_msgs/Odometry.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -215,6 +216,13 @@ public:
   void StopPropsCallback(const std_msgs::Empty::ConstPtr& msg);
 
   /**
+   * Callback function to stop actions via ros message
+   * @param msg
+   *   Empty message
+   */
+  void StopActionCallback(const std_msgs::Empty::ConstPtr& msg);
+
+  /**
    * Callback function for adding waypoints to be used in trajectory generation
    */
   void InputWaypointCallback(const snav_msgs::WaypointWithConfigArray::ConstPtr& msg);
@@ -307,6 +315,7 @@ private:
   ros::Subscriber start_props_subscriber_;
   ros::Subscriber stop_props_subscriber_;
   ros::Subscriber waypoint_subscriber_;
+  ros::Subscriber stop_action_subscriber_;
 
   ros::Subscriber cmd_type_subscriber_;
   ros::Subscriber cmd_mapping_subscriber_;
@@ -321,6 +330,7 @@ private:
   tf2_ros::TransformListener tf_listener_;
 
   geometry_msgs::PoseStamped est_pose_msg_;
+  nav_msgs::Odometry est_pose_out_msg_;
   geometry_msgs::PoseStamped des_pose_msg_;
   geometry_msgs::PoseStamped sim_gt_pose_msg_;
   geometry_msgs::TransformStamped est_transform_msg_;

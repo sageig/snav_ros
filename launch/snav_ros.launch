@@ -44,10 +44,10 @@
     <param name="base_link_frame" value="/base_link"/>
 
     <param name="write_access" value="$(arg write_access)"/>
-    <param name="high_level_actions_only" value="true"/>
+    <param name="high_level_actions_only" value="false"/>
     <param name="tx_config_rate" value="200"/>
     <param name="tx_config_desired_mode" value="SN_VIO_POS_HOLD_MODE"/>
-    <param name="tx_config_use_traj_tracking" value="true"/>
+    <param name="tx_config_use_traj_tracking" value="false"/>
     <param name="tx_config_waypoint_frame_parent" value="ESTIMATION"/>
     <param name="planner_config_traj_type" value="MIN_SNAP"/>
     <param name="rx_config_rate" value="200"/>

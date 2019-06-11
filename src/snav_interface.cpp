@@ -47,7 +47,7 @@ SnavInterface::SnavInterface(ros::NodeHandle nh, ros::NodeHandle pnh,
   last_vel_command_time_ = ros::Time(0);
 
   // Setup the publishers
-  pose_est_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("pose", 10);
+  pose_est_publisher_ = nh_.advertise<nav_msgs::Odometry>("pose", 10);
   pose_des_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("pose_des", 10);
   pose_sim_gt_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("pose_sim_gt", 10);
   battery_voltage_publisher_ = nh_.advertise<std_msgs::Float32>("battery_voltage", 10);
@@ -70,6 +70,7 @@ SnavInterface::SnavInterface(ros::NodeHandle nh, ros::NodeHandle pnh,
   start_props_subscriber_ = nh_.subscribe("start_props", 10, &SnavInterface::StartPropsCallback, this);
   stop_props_subscriber_ = nh_.subscribe("stop_props", 10, &SnavInterface::StopPropsCallback, this);
   waypoint_subscriber_ = nh_.subscribe("input_waypoints", 10, &SnavInterface::InputWaypointCallback, this);
+  stop_action_subscriber_ = nh_.subscribe("stop_action", 10, &SnavInterface::StopActionCallback, this);
 
   pnh_.param("gps_enu_frame", gps_enu_frame_, std::string("/gps/enu"));
   pnh_.param("estimation_frame", estimation_frame_, std::string("/odom"));
@@ -93,7 +94,8 @@ SnavInterface::SnavInterface(ros::NodeHandle nh, ros::NodeHandle pnh,
   pnh_.param("sn_rc_mapping_type", rc_cmd_mapping_string, std::string("RC_OPT_LINEAR_MAPPING"));
 
   pnh_.param("high_level_actions_only", high_level_actions_only_, true);
-
+  
+  // These do not do anything except print a ROS_INFO message
   if (!high_level_actions_only_) {
     SetRcCommandType(rc_cmd_type_string);
     SetRcMappingType(rc_cmd_mapping_string);
@@ -120,6 +122,7 @@ SnavInterface::SnavInterface(ros::NodeHandle nh, ros::NodeHandle pnh,
 
   pnh_.param("rx_config_rate", rx_config_.rx_rate, rx_config_.rx_rate);
 
+  // These do not do anything except print a ROS_INFO message
   cmd_type_subscriber_ = nh_.subscribe("cmd_type", 10, &SnavInterface::CmdTypeCallback, this);
   cmd_mapping_subscriber_ = nh_.subscribe("cmd_mapping", 10, &SnavInterface::CmdMappingCallback, this);
 
@@ -852,6 +855,12 @@ void SnavInterface::StopPropsCallback(const std_msgs::Empty::ConstPtr& msg)
   }
 }
 
+void SnavInterface::StopActionCallback(const std_msgs::Empty::ConstPtr& msg)
+{
+  fci_.preempt_current_action();
+  fci_.exit_action(FCI::Return::ACTION_PREEMPTED);
+}
+
 void SnavInterface::InputWaypointCallback(const snav_msgs::WaypointWithConfigArray::ConstPtr& msg)
 {
   snav_msgs::WaypointWithConfigArray waypoint_array = *msg;
@@ -910,6 +919,7 @@ void SnavInterface::SendVelocityCommand()
       static_cast<float>(commanded_vel_.linear.y),
       static_cast<float>(commanded_vel_.linear.z)};
   snav_fci::RcCommand rc_command;
+  rc_command.type = SN_RC_VIO_POS_HOLD_CMD;
   fci_.convert_velocity_to_rc_command(velocity, commanded_vel_.angular.z,
       rc_command);
   fci_.set_tx_command(rc_command);
@@ -976,6 +986,9 @@ void SnavInterface::UpdatePosVelMessages(tf2::Quaternion q)
   tf2::toMsg(est_tf, est_pose_msg_.pose);
   est_pose_msg_.header.stamp = timestamp;
   est_pose_msg_.header.frame_id = est_transform_msg_.header.frame_id;
+  est_pose_out_msg_.pose.pose = est_pose_msg_.pose;
+  est_pose_out_msg_.header.stamp = timestamp;
+  est_pose_out_msg_.header.frame_id = est_transform_msg_.header.frame_id;
 
   tf2::Quaternion q_des;
   q_des.setEuler(0.0, 0.0, snav_data.pos_vel.yaw_desired);
@@ -1250,7 +1263,7 @@ void SnavInterface::BroadcastSimGtTf(){
 
 void SnavInterface::PublishEstPose(){
   if(valid_rotation_est_)
-    pose_est_publisher_.publish(est_pose_msg_);
+    pose_est_publisher_.publish(est_pose_out_msg_);
   else
     ROS_ERROR("Tried to publish invalid Est Pose");
 }
